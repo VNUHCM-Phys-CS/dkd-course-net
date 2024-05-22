@@ -40,7 +40,7 @@ loadNodeLinks()
         const catall = _.uniq(allData.nodes.map(d=>d[colorKEY]));
         currentData = {nodes:[...graph.nodes],links:[...graph.links]};
         initFilter();
-        drawFunc.graph(currentData).setColorByCat(catall).setCustomCat(groupCat).initZoom().draw().initFilter(onChangedata).forceInit();
+        drawFunc.graph(currentData).setxstep(graph.xstep).setColorByCat(catall).setCustomCat(groupCat).initZoom().draw().initFilter(onChangedata).forceInit();
         getURL();
         function onChangedata({name,layer,cat}){
             currentData.nodes = allData.nodes;

@@ -1,11 +1,16 @@
 // load data
 async function loadNodeLinks(){
     // handle node
+    let maxTerm = 1;
     const nodes = await d3.csv("src/data/nodes.csv")
     .then(d=>{
         d.forEach(element => {
             ["id","YEAR","TERM","REQUIRE"].forEach(k=>element[k]= +element[k]);
-            element._step = element.YEAR+(element.TERM-1)/2;
+            maxTerm = Math.max(element["TERM"],maxTerm);
+        });
+        d.forEach(element => {
+            ["id","YEAR","TERM","REQUIRE"].forEach(k=>element[k]= +element[k]);
+            element._step = element.YEAR+(element.TERM-1)/maxTerm;
         });
         return d;
     });
@@ -28,5 +33,5 @@ async function loadNodeLinks(){
     })
     // Update 4/22: remove same level
     links = links.filter(d=>!d.isSameLevel);
-    return {nodes,links}
+    return {nodes,links,xstep:1/maxTerm}
 }

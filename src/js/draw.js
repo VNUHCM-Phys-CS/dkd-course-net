@@ -72,6 +72,8 @@ const draw = function ({ width, height, margin }) {
     if (l.isSameLevel) return linkSameFunc(l);
     else {
       let d = linkDifFunc(l);
+      if (isNaN(l.source.x))
+        debugger
       if (l.source.id < 0) {
         d[0] = "L";
         d = `M${l.source.x - store.xWidthinner / 2} ${l.source.y}` + d;
@@ -469,12 +471,13 @@ const draw = function ({ width, height, margin }) {
     store._links = [...links];
     // add virtual node/link
     let idvirtual = -1;
-    const xstep = 0.5;
+    const xstep = store.xstep;
     let vnodes = {}; // store id vs layer avoid repeat node
     links.forEach((l) => {
       let lastitem = l.source;
       let child = [];
-      for (let i = l.source._step + xstep; i < l.target._step; i += xstep) {
+      for (let s = 1; s < Math.round((l.target._step - l.source._step)/xstep); s ++) {
+        const  i = Math.round((l.source._step + s*xstep)*1000)/1000;
         let _l = vnodes[`${lastitem.id}-${lastitem._step}`];
         if (!_l) {
           const maink = Math.floor(i);
@@ -482,10 +485,12 @@ const draw = function ({ width, height, margin }) {
             id: idvirtual,
             _step: i,
             [mainxKEY]: maink,
-            [subxKEY]: (i - maink) / xstep + 1,
+            [subxKEY]: Math.round((i - maink) / xstep + 1),
             [colorKEY]: l.target[colorKEY],
             isVirtual: true
           };
+          if (target[subxKEY] >3)
+            debugger
           store._nodes.push(target);
           idvirtual--;
           _l = { source: lastitem, target, isVirtual: true };
@@ -516,7 +521,7 @@ const draw = function ({ width, height, margin }) {
       l.source._linksnext.push(l);
       l.target._linkspre.push(l);
     });
-    store.groupByLayer = d3.groups(store._nodes, (d) => d._step);
+    store.groupByLayer = d3.groups(store._nodes, (d) => `${d[mainxKEY]}_${d[subxKEY]}`);
     let maxE = 0;
     store.groupByLayer.forEach(([k, g]) => {
       maxE = Math.max(maxE, g.length);
@@ -582,11 +587,13 @@ const draw = function ({ width, height, margin }) {
       xWidth,
       gap,
     } = store;
-    const groupByLayer = d3.groups(_nodes, (d) => d._step);
+    const groupByLayer = d3.groups(_nodes, (d) => `${d[mainxKEY]}_${d[subxKEY]}`);
     const maxHL = [];
+    debugger
     // arrange y pos
     groupByLayer.forEach(([k, g]) => {
       g.sort((a, b) => a.y - b.y);
+      debugger
       const maxmem = g.length;
       let yvisual = yHeightinner/5;
       let maxH = 0;//yHeightinner * maxmem + ymingap * (maxmem - 1);
@@ -600,10 +607,12 @@ const draw = function ({ width, height, margin }) {
         maxH-=ymingap;
 
       let posy = -maxH/2;//(heightInner - maxH) / 2;
-      const lmax = { step: k, y0: Infinity, y1: -Infinity };
+      const lmax = { step: g[0]._step, y0: Infinity, y1: -Infinity };
       maxHL.push(lmax);
       g.forEach((d) => {
         d.x = xScaleBand(d[mainxKEY]) + xScaleinnerBand(d[subxKEY]);
+        if (isNaN(d.x))
+          debugger
         let hh = yHeightinner/2;
         if (d.isVirtual) 
           hh = yvisual/2;
@@ -647,6 +656,10 @@ const draw = function ({ width, height, margin }) {
     eNode.attr("transform", (d) => `translate(${d.x},${d.y})`);
     gLink.style("display", undefined);
     eLink.attr("d", linkFunc);
+    return master;
+  };
+  master.setxstep = (xstep)=>{
+    store.xstep = xstep;
     return master;
   };
   return master;
